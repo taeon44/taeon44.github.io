@@ -180,6 +180,26 @@ textarea {
   right: 0;
 }
 
+.site-nav .language-link {
+  min-width: 42px;
+  padding: 6px 10px;
+  text-align: center;
+  border: 1px solid rgba(16, 36, 74, 0.22);
+  border-radius: 999px;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.site-nav .language-link::after {
+  display: none;
+}
+
+.site-nav .language-link:hover,
+.site-nav .language-link:focus-visible {
+  color: white;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
 .hero {
   position: relative;
   min-height: 720px;
@@ -749,6 +769,59 @@ textarea {
   transform: none;
 }
 
+/* Language entry */
+.language-entry {
+  min-height: 100vh;
+  background: #a9e4ff url("../images/decor/hero-sky.png") center / cover no-repeat;
+}
+
+.language-entry-main {
+  display: grid;
+  min-height: 100vh;
+  padding: 40px 20px;
+  place-items: center;
+}
+
+.language-entry-card {
+  width: min(100%, 560px);
+  padding: clamp(34px, 6vw, 58px);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.language-entry-card .brand {
+  margin-bottom: 42px;
+}
+
+.language-entry-card h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 7vw, 3.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.045em;
+}
+
+.language-entry-card > p:not(.eyebrow) {
+  margin: 15px 0 0;
+  color: var(--ink-soft);
+}
+
+.language-entry-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 32px;
+}
+
+@media (max-width: 420px) {
+  .language-entry-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Privacy page */
 .legal-body {
   background: #f4f8fb;
@@ -995,7 +1068,7 @@ textarea {
   }
 
   .site-nav {
-    gap: 15px;
+    gap: 12px;
     font-size: 0.78rem;
   }
 
@@ -1007,6 +1080,12 @@ textarea {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
+  }
+
+  .site-nav .language-link {
+    min-width: 40px;
+    min-height: 36px;
+    padding: 5px 9px;
   }
 
   .hero {
