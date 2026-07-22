@@ -34,11 +34,13 @@ document.querySelectorAll("[data-gallery]").forEach((gallery) => {
 });
 
 document.querySelectorAll("[data-drag-scroll]").forEach((rail) => {
-  const shots = [...rail.querySelectorAll(".portrait-shot")];
+  const itemSelector = rail.dataset.dragItem || ".portrait-shot";
+  const dragItems = [...rail.querySelectorAll(itemSelector)];
   let isDragging = false;
   let startX = 0;
   let startScrollLeft = 0;
   let hasDragged = false;
+  let suppressClick = false;
   let snapAnimationFrame = null;
 
   const stopSnapAnimation = () => {
@@ -49,16 +51,16 @@ document.querySelectorAll("[data-drag-scroll]").forEach((rail) => {
     rail.classList.remove("is-settling");
   };
 
-  const getShotPositions = () => {
+  const getItemPositions = () => {
     const railRect = rail.getBoundingClientRect();
     const scrollPadding = Number.parseFloat(window.getComputedStyle(rail).scrollPaddingLeft) || 0;
     const maxScrollLeft = rail.scrollWidth - rail.clientWidth;
 
-    return shots.map((shot) => {
-      const shotRect = shot.getBoundingClientRect();
+    return dragItems.map((item) => {
+      const itemRect = item.getBoundingClientRect();
       return Math.min(
         maxScrollLeft,
-        Math.max(0, rail.scrollLeft + shotRect.left - railRect.left - scrollPadding)
+        Math.max(0, rail.scrollLeft + itemRect.left - railRect.left - scrollPadding)
       );
     });
   };
@@ -101,20 +103,26 @@ document.querySelectorAll("[data-drag-scroll]").forEach((rail) => {
   const finishDrag = (shouldSnap = true) => {
     if (!isDragging) return;
 
-    const willSnap = shouldSnap && hasDragged && shots.length > 0;
+    const willSnap = shouldSnap && hasDragged && dragItems.length > 0;
+    if (hasDragged) {
+      suppressClick = true;
+      window.setTimeout(() => {
+        suppressClick = false;
+      }, 0);
+    }
     if (willSnap) rail.classList.add("is-settling");
     isDragging = false;
     rail.classList.remove("is-dragging");
 
     if (!willSnap) return;
 
-    const positions = getShotPositions();
+    const positions = getItemPositions();
     const nearestIndex = getNearestIndex(positions, rail.scrollLeft);
     animateTo(positions[nearestIndex]);
   };
 
   rail.addEventListener("mousedown", (event) => {
-    if (event.button !== 0 || !shots.length) return;
+    if (event.button !== 0 || !dragItems.length) return;
 
     event.preventDefault();
     stopSnapAnimation();
@@ -140,6 +148,16 @@ document.querySelectorAll("[data-drag-scroll]").forEach((rail) => {
   window.addEventListener("mouseup", () => finishDrag());
   window.addEventListener("blur", () => finishDrag(false));
   rail.addEventListener("dragstart", (event) => event.preventDefault());
+  rail.addEventListener(
+    "click",
+    (event) => {
+      if (!suppressClick) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClick = false;
+    },
+    true
+  );
 });
 
 const revealElements = document.querySelectorAll(".reveal");
