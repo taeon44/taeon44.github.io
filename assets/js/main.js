@@ -33,6 +33,115 @@ document.querySelectorAll("[data-gallery]").forEach((gallery) => {
   });
 });
 
+document.querySelectorAll("[data-drag-scroll]").forEach((rail) => {
+  const shots = [...rail.querySelectorAll(".portrait-shot")];
+  let isDragging = false;
+  let startX = 0;
+  let startScrollLeft = 0;
+  let hasDragged = false;
+  let snapAnimationFrame = null;
+
+  const stopSnapAnimation = () => {
+    if (snapAnimationFrame !== null) {
+      window.cancelAnimationFrame(snapAnimationFrame);
+      snapAnimationFrame = null;
+    }
+    rail.classList.remove("is-settling");
+  };
+
+  const getShotPositions = () => {
+    const railRect = rail.getBoundingClientRect();
+    const scrollPadding = Number.parseFloat(window.getComputedStyle(rail).scrollPaddingLeft) || 0;
+    const maxScrollLeft = rail.scrollWidth - rail.clientWidth;
+
+    return shots.map((shot) => {
+      const shotRect = shot.getBoundingClientRect();
+      return Math.min(
+        maxScrollLeft,
+        Math.max(0, rail.scrollLeft + shotRect.left - railRect.left - scrollPadding)
+      );
+    });
+  };
+
+  const getNearestIndex = (positions, scrollLeft) =>
+    positions.reduce(
+      (nearest, position, index) =>
+        Math.abs(position - scrollLeft) < Math.abs(positions[nearest] - scrollLeft) ? index : nearest,
+      0
+    );
+
+  const animateTo = (targetScrollLeft) => {
+    const from = rail.scrollLeft;
+    const distance = targetScrollLeft - from;
+
+    if (Math.abs(distance) < 1) {
+      rail.classList.remove("is-settling");
+      return;
+    }
+
+    const duration = Math.min(480, Math.max(320, Math.abs(distance) * 1.1));
+    const startedAt = window.performance.now();
+    const animateSnap = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      rail.scrollLeft = from + distance * eased;
+
+      if (progress < 1) {
+        snapAnimationFrame = window.requestAnimationFrame(animateSnap);
+        return;
+      }
+
+      snapAnimationFrame = null;
+      rail.classList.remove("is-settling");
+    };
+
+    snapAnimationFrame = window.requestAnimationFrame(animateSnap);
+  };
+
+  const finishDrag = (shouldSnap = true) => {
+    if (!isDragging) return;
+
+    const willSnap = shouldSnap && hasDragged && shots.length > 0;
+    if (willSnap) rail.classList.add("is-settling");
+    isDragging = false;
+    rail.classList.remove("is-dragging");
+
+    if (!willSnap) return;
+
+    const positions = getShotPositions();
+    const nearestIndex = getNearestIndex(positions, rail.scrollLeft);
+    animateTo(positions[nearestIndex]);
+  };
+
+  rail.addEventListener("mousedown", (event) => {
+    if (event.button !== 0 || !shots.length) return;
+
+    event.preventDefault();
+    stopSnapAnimation();
+    isDragging = true;
+    startX = event.clientX;
+    startScrollLeft = rail.scrollLeft;
+    hasDragged = false;
+    rail.classList.add("is-dragging");
+    rail.focus({ preventScroll: true });
+  });
+
+  window.addEventListener("mousemove", (event) => {
+    if (!isDragging) return;
+
+    const distance = event.clientX - startX;
+    if (Math.abs(distance) > 3) {
+      hasDragged = true;
+      event.preventDefault();
+    }
+    rail.scrollLeft = startScrollLeft - distance;
+  });
+
+  window.addEventListener("mouseup", () => finishDrag());
+  window.addEventListener("blur", () => finishDrag(false));
+  rail.addEventListener("dragstart", (event) => event.preventDefault());
+});
+
 const revealElements = document.querySelectorAll(".reveal");
 
 if ("IntersectionObserver" in window) {
